@@ -21,7 +21,7 @@ jobs:
           - runner: macos-15
             system: aarch64-darwin
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: cachix/install-nix-action@v31
       - name: Verify runner architecture
         run: test "$(nix eval --impure --raw --expr builtins.currentSystem)" = "${{ matrix.system }}"

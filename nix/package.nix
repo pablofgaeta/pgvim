@@ -61,6 +61,22 @@
       yaml-language-server
     ])
     ++ [supercolliderPackage];
+
+  wrapperArgs =
+    [
+      "--prefix"
+      "PATH"
+      ":"
+      (pkgs.lib.makeBinPath dependencies)
+      "--add-flags"
+      "-u ${bootstrap}"
+    ]
+    ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+      "--prefix"
+      "LIBRARY_PATH"
+      ":"
+      (pkgs.lib.makeLibraryPath runtimeLibraries)
+    ];
 in
   pkgs.symlinkJoin {
     name = "pgvim";
@@ -68,10 +84,7 @@ in
     nativeBuildInputs = [pkgs.makeWrapper];
 
     postBuild = ''
-      wrapProgram "$out/bin/nvim" \
-        --prefix PATH : "${pkgs.lib.makeBinPath dependencies}" \
-        ${pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''--prefix LIBRARY_PATH : "${pkgs.lib.makeLibraryPath runtimeLibraries}" \''}
-        --add-flags "-u ${bootstrap}"
+      wrapProgram "$out/bin/nvim" ${pkgs.lib.escapeShellArgs wrapperArgs}
       ln -s nvim "$out/bin/vi"
       ln -s nvim "$out/bin/vim"
     '';
