@@ -1,0 +1,74 @@
+local M = {
+  packages = {
+    'baleia.nvim',
+    'diffview.nvim',
+    'gitsigns.nvim',
+    'neogit',
+    'neojj',
+  },
+}
+
+function M.setup()
+  if vim.g.vscode then
+    return
+  end
+
+  require('gitsigns').setup {
+    signs = {
+      add = { text = '+' },
+      change = { text = '~' },
+      delete = { text = '_' },
+      topdelete = { text = '‾' },
+      changedelete = { text = '~' },
+    },
+    on_attach = function(bufnr)
+      local gitsigns = require 'gitsigns'
+      local function map(mode, lhs, rhs, options)
+        options = options or {}
+        options.buffer = bufnr
+        vim.keymap.set(mode, lhs, rhs, options)
+      end
+
+      map('n', ']c', function()
+        if vim.wo.diff then
+          vim.cmd.normal { ']c', bang = true }
+        else
+          gitsigns.nav_hunk 'next'
+        end
+      end, { desc = 'Jump to next git change' })
+      map('n', '[c', function()
+        if vim.wo.diff then
+          vim.cmd.normal { '[c', bang = true }
+        else
+          gitsigns.nav_hunk 'prev'
+        end
+      end, { desc = 'Jump to previous git change' })
+      map('v', '<leader>hs', function()
+        gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
+      end, { desc = 'Git stage hunk' })
+      map('v', '<leader>hr', function()
+        gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
+      end, { desc = 'Git reset hunk' })
+      map('n', '<leader>hs', gitsigns.stage_hunk, { desc = 'Git stage hunk' })
+      map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'Git reset hunk' })
+      map('n', '<leader>hS', gitsigns.stage_buffer, { desc = 'Git stage buffer' })
+      map('n', '<leader>hu', gitsigns.undo_stage_hunk, { desc = 'Git undo stage hunk' })
+      map('n', '<leader>hR', gitsigns.reset_buffer, { desc = 'Git reset buffer' })
+      map('n', '<leader>hp', gitsigns.preview_hunk, { desc = 'Git preview hunk' })
+      map('n', '<leader>hb', gitsigns.blame_line, { desc = 'Git blame line' })
+      map('n', '<leader>hd', gitsigns.diffthis, { desc = 'Git diff against index' })
+      map('n', '<leader>hD', function()
+        gitsigns.diffthis '@'
+      end, { desc = 'Git diff against last commit' })
+      map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = 'Toggle git blame line' })
+      map('n', '<leader>tD', gitsigns.preview_hunk_inline, { desc = 'Toggle deleted lines' })
+    end,
+  }
+
+  require('neogit').setup {}
+  vim.keymap.set('n', '<leader>gg', '<cmd>Neogit<cr>', { desc = 'Show Neogit UI' })
+  vim.keymap.set('n', '<leader>js', '<cmd>JJ status<cr>', { desc = 'JJ status' })
+  vim.keymap.set('n', '<leader>jl', '<cmd>JJ log<cr>', { desc = 'JJ log' })
+end
+
+return M
