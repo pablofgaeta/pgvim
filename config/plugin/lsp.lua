@@ -1,6 +1,10 @@
-local M = {
-  packages = { 'fidget.nvim', 'nvim-lspconfig', 'rustaceanvim' },
-  requires = { 'workspace', 'completion' },
+vim.pack.add {
+  'https://github.com/nvim-lua/plenary.nvim',
+  'https://github.com/nvim-telescope/telescope.nvim',
+  'https://github.com/saghen/blink.cmp',
+  'https://github.com/j-hui/fidget.nvim',
+  'https://github.com/neovim/nvim-lspconfig',
+  'https://github.com/mrcjkb/rustaceanvim',
 }
 
 local function client_supports_method(client, method, bufnr)
@@ -51,67 +55,63 @@ local function on_attach(event)
   end
 end
 
-function M.setup()
-  if vim.g.vscode then
-    return
-  end
-
-  require('fidget').setup {}
-  vim.api.nvim_create_autocmd('LspAttach', {
-    group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
-    callback = on_attach,
-  })
-
-  vim.diagnostic.config {
-    severity_sort = true,
-    float = { border = 'rounded', source = 'if_many' },
-    underline = { severity = vim.diagnostic.severity.ERROR },
-    signs = vim.g.have_nerd_font and {
-      text = {
-        [vim.diagnostic.severity.ERROR] = '󰅚 ',
-        [vim.diagnostic.severity.WARN] = '󰀪 ',
-        [vim.diagnostic.severity.INFO] = '󰋽 ',
-        [vim.diagnostic.severity.HINT] = '󰌶 ',
-      },
-    } or {},
-    virtual_text = { source = 'if_many', spacing = 2 },
-  }
-
-  local capabilities = require('blink.cmp').get_lsp_capabilities()
-  local servers = {
-    gopls = {},
-    pyrefly = {},
-    html = {},
-    cssls = {},
-    yamlls = {},
-    dockerls = {},
-    terraformls = {},
-    nil_ls = {
-      settings = {
-        ['nil'] = {
-          formatting = { command = { 'alejandra' } },
-        },
-      },
-    },
-    lua_ls = {
-      settings = {
-        Lua = {
-          completion = { callSnippet = 'Replace' },
-          diagnostics = { disable = { 'missing-fields' } },
-        },
-      },
-    },
-  }
-
-  for name, server in pairs(servers) do
-    vim.lsp.config(
-      name,
-      vim.tbl_deep_extend('force', {
-        capabilities = capabilities,
-      }, server)
-    )
-    vim.lsp.enable(name)
-  end
+if vim.g.vscode then
+  return
 end
 
-return M
+require('fidget').setup {}
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
+  callback = on_attach,
+})
+
+vim.diagnostic.config {
+  severity_sort = true,
+  float = { border = 'rounded', source = 'if_many' },
+  underline = { severity = vim.diagnostic.severity.ERROR },
+  signs = vim.g.have_nerd_font and {
+    text = {
+      [vim.diagnostic.severity.ERROR] = '󰅚 ',
+      [vim.diagnostic.severity.WARN] = '󰀪 ',
+      [vim.diagnostic.severity.INFO] = '󰋽 ',
+      [vim.diagnostic.severity.HINT] = '󰌶 ',
+    },
+  } or {},
+  virtual_text = { source = 'if_many', spacing = 2 },
+}
+
+local capabilities = require('blink.cmp').get_lsp_capabilities()
+local servers = {
+  gopls = {},
+  pyrefly = {},
+  html = {},
+  cssls = {},
+  yamlls = {},
+  dockerls = {},
+  terraformls = {},
+  nil_ls = {
+    settings = {
+      ['nil'] = {
+        formatting = { command = { 'alejandra' } },
+      },
+    },
+  },
+  lua_ls = {
+    settings = {
+      Lua = {
+        completion = { callSnippet = 'Replace' },
+        diagnostics = { disable = { 'missing-fields' } },
+      },
+    },
+  },
+}
+
+for name, server in pairs(servers) do
+  vim.lsp.config(
+    name,
+    vim.tbl_deep_extend('force', {
+      capabilities = capabilities,
+    }, server)
+  )
+  vim.lsp.enable(name)
+end

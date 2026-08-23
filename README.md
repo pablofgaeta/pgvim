@@ -42,8 +42,12 @@ cd pgvim
 nix run .
 ```
 
-Configuration changes are included when Nix rebuilds the package. The
-repository lockfile is synchronized to
+Configuration changes are included when Nix rebuilds the package. Neovim
+automatically sources the Lua files in `config/plugin/` during startup. Each
+file adds its plugins with dependencies listed before their consumers, then
+configures them.
+
+The repository lockfile is synchronized to
 `~/.config/nvim/nvim-pack-lock.json` at startup. After accepting
 `vim.pack.update()`, copy the writable lockfile back to
 `config/nvim-pack-lock.json` before restarting Neovim.
@@ -56,8 +60,8 @@ Run the package smoke tests for the current system:
 nix flake check
 ```
 
-The check exercises empty and file-backed sessions, first-use mappings, plugin
-commands, lazy loading, and Home Manager extension composition in isolated XDG
+The check exercises empty and file-backed sessions, mappings, plugin commands,
+eager plugin loading, and Home Manager extension composition in isolated XDG
 directories.
 
 ## Extensions

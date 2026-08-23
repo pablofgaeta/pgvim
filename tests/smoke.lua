@@ -36,14 +36,15 @@ local function check_extension()
 	assert_equal(vim.g.pgvim_smoke_before, "runtime-loaded", "extension before hook")
 	assert_equal(vim.g.pgvim_smoke_after, "configured", "extension after hook")
 	assert_equal(vim.g.pgvim_smoke_pack_stub_called, true, "isolated plugin fixture")
+	assert_equal(vim.g.pgvim_smoke_supermaven_setup, true, "eager Supermaven setup")
 end
 
 local function check_empty_session()
-	assert_equal(package.loaded.telescope, nil, "Telescope must remain lazy before first use")
+	assert_equal(type(package.loaded.telescope), "table", "Telescope must load during startup")
+	assert_equal(type(package.loaded.avante), "table", "AI must load during startup")
 	vim.api.nvim_feedkeys(vim.keycode(" sf"), "xt", false)
-	assert_equal(vim.bo.filetype, "TelescopePrompt", "<leader>sf first use")
-	assert_equal(package.loaded.avante, nil, "AI must remain lazy in plugin prompts")
-	assert_no_errors("<leader>sf first use")
+	assert_equal(vim.bo.filetype, "TelescopePrompt", "<leader>sf")
+	assert_no_errors("<leader>sf")
 end
 
 local function check_file_session()

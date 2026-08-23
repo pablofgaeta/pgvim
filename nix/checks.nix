@@ -17,8 +17,21 @@
     doCheck = false;
   };
 
+  supermaven = pkgs.writeTextDir "lua/supermaven-nvim.lua" ''
+    return {
+      setup = function()
+        vim.g.pgvim_smoke_supermaven_setup = true
+      end,
+    }
+  '';
+
+  vimTidal = pkgs.runCommand "vim-tidal-smoke-stub" {} ''
+    mkdir -p "$out"
+  '';
+
   pluginSources = {
     LuaSnip = vimPlugins.luasnip;
+    "avante.nvim" = vimPlugins."avante-nvim";
     "baleia.nvim" = vimPlugins."baleia-nvim";
     "blink.cmp" = vimPlugins."blink-cmp";
     catppuccin = vimPlugins."catppuccin-nvim";
@@ -39,6 +52,11 @@
     neogit = vimPlugins.neogit;
     inherit neojj;
     "nui.nvim" = vimPlugins."nui-nvim";
+    "nvim-dap" = vimPlugins."nvim-dap";
+    "nvim-dap-go" = vimPlugins."nvim-dap-go";
+    "nvim-dap-python" = vimPlugins."nvim-dap-python";
+    "nvim-dap-ui" = vimPlugins."nvim-dap-ui";
+    "nvim-nio" = vimPlugins."nvim-nio";
     "nvim-autopairs" = vimPlugins."nvim-autopairs";
     "nvim-lspconfig" = vimPlugins."nvim-lspconfig";
     "nvim-treesitter" = vimPlugins."nvim-treesitter";
@@ -46,12 +64,15 @@
     "oil.nvim" = vimPlugins."oil-nvim";
     "plenary.nvim" = vimPlugins."plenary-nvim";
     rustaceanvim = vimPlugins.rustaceanvim;
+    scnvim = vimPlugins.scnvim;
+    "supermaven-nvim" = supermaven;
     "telescope-fzf-native.nvim" = vimPlugins."telescope-fzf-native-nvim";
     "telescope-ui-select.nvim" = vimPlugins."telescope-ui-select-nvim";
     "telescope.nvim" = vimPlugins."telescope-nvim";
     "todo-comments.nvim" = vimPlugins."todo-comments-nvim";
     "toggleterm.nvim" = vimPlugins."toggleterm-nvim";
     undotree = vimPlugins.undotree;
+    "vim-tidal" = vimTidal;
     "which-key.nvim" = vimPlugins."which-key-nvim";
   };
 
@@ -82,8 +103,24 @@
           return original_copyfile(source, target, ...)
         end
         local smoke_pack = require('vim.pack')
-        smoke_pack.add = function()
+        local function plugin_name(spec)
+          if type(spec) == 'table' and spec.name then
+            return spec.name
+          end
+          local source = type(spec) == 'table' and spec.src or spec
+          local name = source:match('/([^/]+)$'):gsub("%.git$", "")
+          return name
+        end
+        local active_plugins = {}
+        smoke_pack.add = function(specs)
           vim.g.pgvim_smoke_pack_stub_called = true
+          for _, spec in ipairs(specs) do
+            local name = plugin_name(spec)
+            if not active_plugins[name] then
+              vim.cmd.packadd({ args = { name }, bang = vim.v.vim_did_init == 0 })
+              active_plugins[name] = true
+            end
+          end
         end
         rawset(vim, 'pack', smoke_pack)
         vim.cmd.packadd('nvim-treesitter')

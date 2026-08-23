@@ -2,6 +2,7 @@ local source = debug.getinfo(1, 'S').source
 local config_root = vim.fs.dirname(source:sub(1, 1) == '@' and source:sub(2) or source)
 vim.g.pgvim_root = config_root
 vim.opt.runtimepath:prepend(config_root)
+vim.opt.runtimepath:append(config_root .. '/after')
 
 require 'settings'
 require 'bigfile'
@@ -32,11 +33,34 @@ if extension ~= nil and type(extension) ~= 'table' then
   error 'extraLuaConfig must return a table of extension hooks or nil'
 end
 
-local overrides = extension and extension.before and extension.before() or {}
-require('plugins').setup(overrides)
-if extension and extension.after then
-  extension.after()
+package.loaded['pgvim.overrides'] = extension and extension.before and extension.before() or {}
+
+local function build_plugin(event)
+  if event.data.kind ~= 'install' and event.data.kind ~= 'update' then
+    return
+  end
+
+  local commands = {
+    ['LuaSnip'] = { 'make', 'install_jsregexp' },
+    ['avante.nvim'] = { 'make' },
+    ['telescope-fzf-native.nvim'] = { 'make' },
+  }
+  local command = commands[event.data.spec.name]
+  if command then
+    local result = vim.system(command, { cwd = event.data.path }):wait()
+    if result.code ~= 0 then
+      error(('Failed to build %s:\n%s'):format(event.data.spec.name, result.stderr or ''))
+    end
+  end
 end
+
+vim.api.nvim_create_autocmd('PackChanged', {
+  group = vim.api.nvim_create_augroup('plugin-builds', { clear = true }),
+  callback = build_plugin,
+})
+vim.api.nvim_create_user_command('PackSync', function()
+  vim.pack.update(nil, { target = 'lockfile' })
+end, { desc = 'Synchronize installed plugins to the repository lockfile' })
 
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight yanked text',
